@@ -1,59 +1,43 @@
-# Nakama + PostgreSQL Pelican Bundle
+# Nakama + PostgreSQL (Exposed Database)
 
-This runs Nakama and PostgreSQL in one Pelican server container.
+This version exposes the embedded PostgreSQL instance so another trusted service, such as your API container, can connect directly.
 
-Persistent data:
-- `/home/container/postgres/data`
-- `/home/container/nakama/data`
-- `/home/container/nakama/modules`
+## Ports
 
-PostgreSQL listens only on `127.0.0.1:5432` inside the container and does not need a Pelican allocation.
+Recommended Pelican allocations:
 
-## Build the image
+- Primary: `7350` — Nakama API/WebSocket
+- Additional: `7351` — Nakama Console
+- Additional: `15432` — PostgreSQL
 
-Create a GitHub repo such as `pelican-nakama-postgres` and upload:
-- `Dockerfile`
-- `start.sh`
-- `.github/workflows/build.yml`
+Do NOT use host port 5432 because your Rocky host already uses 5432 for its own PostgreSQL.
 
-Push to `main`. The workflow builds:
-`ghcr.io/<your-github-username>/pelican-nakama-postgres:latest`
+## Startup Variables
 
-Make the GHCR package public, or configure Wings with credentials for a private registry.
+- `POSTGRES_PORT=15432`
+- `POSTGRES_ALLOWED_CIDR=172.16.0.0/12` for Docker containers on the same host
+- Use `100.64.0.0/10` if the API connects through Tailscale
+- Use your LAN subnet, e.g. `192.168.1.0/24`, if the API connects through LAN
+- Avoid `0.0.0.0/0` unless you intentionally want PostgreSQL reachable from any source that can reach the allocation
 
-## Import the egg
+## API connection string
 
-Before import, replace:
-`ghcr.io/YOUR_GITHUB_USERNAME/pelican-nakama-postgres:latest`
+If your API connects to the node over Tailscale:
 
-with your real GHCR image path.
+`postgresql://nakama:<POSTGRES_PASSWORD>@100.115.175.15:15432/nakama`
 
-Then import `egg-nakama-postgres.json` in Pelican.
+If it connects over LAN:
 
-## Suggested server resources
+`postgresql://nakama:<POSTGRES_PASSWORD>@192.168.1.22:15432/nakama`
 
-- CPU: 200%
-- RAM: 6144 MiB
-- Disk: 50-100 GB
-- Primary allocation: 7350
-- Additional allocation: 7351
+If the API is another Docker/Pelican container on this same host, use whichever node address is reachable from that container plus port 15432.
 
-## Secrets
+## Rebuild
 
-Replace every `CHANGE_ME` value.
+Replace `start.sh` in your GitHub image repo with the version in this bundle, keep the Dockerfile/build workflow, commit to `main`, and let GitHub Actions rebuild `ghcr.io/therealenvist/pelican-nakama-postgres:latest`.
 
-For safe values:
-`openssl rand -hex 32`
+Then restart the Pelican Nakama server so Wings pulls the rebuilt image.
 
-Use a hex value for `POSTGRES_PASSWORD`.
+## Security
 
-## First boot
-
-The startup script:
-1. Initializes PostgreSQL under `/home/container/postgres/data`
-2. Starts it on localhost:5432
-3. Creates the `nakama` role and database
-4. Runs Nakama migrations
-5. Starts Nakama
-
-The image pins Nakama 3.40.0.
+Do not port-forward PostgreSQL to the public internet. Restrict access to your Docker subnet, Tailscale network, or LAN as appropriate.

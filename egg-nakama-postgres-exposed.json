@@ -1,0 +1,213 @@
+{
+  "_comment": "CUSTOM EGG FOR PELICAN PANEL - Nakama + PostgreSQL with exposed PostgreSQL port",
+  "meta": {
+    "version": "PLCN_v3",
+    "update_url": null
+  },
+  "exported_at": "2026-09-25T16:04:53+00:00",
+  "name": "Nakama + PostgreSQL (Exposed DB)",
+  "author": "custom@local",
+  "uuid": "248204ab-0fa3-40fd-8c71-565a5c2c5102",
+  "description": "Self-contained Nakama server with PostgreSQL stored inside the Pelican server files. PostgreSQL can be exposed through an additional Pelican allocation for trusted API access.",
+  "image": null,
+  "tags": [
+    "nakama",
+    "postgresql",
+    "backend",
+    "multiplayer"
+  ],
+  "features": [],
+  "docker_images": {
+    "Nakama + PostgreSQL": "ghcr.io/therealenvist/pelican-nakama-postgres:latest"
+  },
+  "file_denylist": [],
+  "startup_commands": {
+    "Default": "bash /usr/local/bin/start-nakama-postgres"
+  },
+  "config": {
+    "files": "{}",
+    "startup": "{\"done\": \"Startup done\"}",
+    "logs": "{}",
+    "stop": "^SIGTERM"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\nset -e\nmkdir -p /mnt/server/postgres /mnt/server/nakama/data /mnt/server/nakama/modules\necho 'Persistent directories prepared.'\n",
+      "container": "ghcr.io/pelican-eggs/installers:debian",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "sort": 1,
+      "name": "PostgreSQL Password",
+      "description": "Password for the Nakama PostgreSQL user. Use letters, numbers, underscore or hyphen only.",
+      "env_variable": "POSTGRES_PASSWORD",
+      "default_value": "CHANGE_ME_WITH_A_LONG_RANDOM_PASSWORD",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "regex:/^[A-Za-z0-9_-]{16,128}$/"
+      ]
+    },
+    {
+      "sort": 2,
+      "name": "PostgreSQL Port",
+      "description": "PostgreSQL TCP port inside the container. Add the same port as an additional Pelican allocation. 15432 avoids conflicting with the host PostgreSQL on 5432.",
+      "env_variable": "POSTGRES_PORT",
+      "default_value": "15432",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "integer",
+        "between:1024,65535"
+      ]
+    },
+    {
+      "sort": 3,
+      "name": "PostgreSQL Allowed CIDR",
+      "description": "Network allowed to authenticate to PostgreSQL. Default permits typical Docker bridge networks only. Use 100.64.0.0/10 for Tailscale, your LAN CIDR for LAN access, or 0.0.0.0/0 only if you understand the exposure risk.",
+      "env_variable": "POSTGRES_ALLOWED_CIDR",
+      "default_value": "172.16.0.0/12",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "max:64"
+      ]
+    },
+    {
+      "sort": 4,
+      "name": "Nakama Node Name",
+      "description": "Name for this Nakama node.",
+      "env_variable": "NAKAMA_NAME",
+      "default_value": "nakama-1",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "max:64"
+      ]
+    },
+    {
+      "sort": 5,
+      "name": "Server Key",
+      "description": "Nakama socket server key.",
+      "env_variable": "SERVER_KEY",
+      "default_value": "CHANGE_ME_SERVER_KEY",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "min:16",
+        "max:128"
+      ]
+    },
+    {
+      "sort": 6,
+      "name": "Runtime HTTP Key",
+      "description": "Secret for Nakama runtime HTTP calls.",
+      "env_variable": "RUNTIME_HTTP_KEY",
+      "default_value": "CHANGE_ME_RUNTIME_HTTP_KEY",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "min:16",
+        "max:128"
+      ]
+    },
+    {
+      "sort": 7,
+      "name": "Session Encryption Key",
+      "description": "Session token encryption key.",
+      "env_variable": "SESSION_ENCRYPTION_KEY",
+      "default_value": "CHANGE_ME_SESSION_ENCRYPTION_KEY",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "min:16",
+        "max:256"
+      ]
+    },
+    {
+      "sort": 8,
+      "name": "Refresh Encryption Key",
+      "description": "Refresh token encryption key.",
+      "env_variable": "SESSION_REFRESH_ENCRYPTION_KEY",
+      "default_value": "CHANGE_ME_REFRESH_ENCRYPTION_KEY",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "min:16",
+        "max:256"
+      ]
+    },
+    {
+      "sort": 9,
+      "name": "Console Port",
+      "description": "Nakama web console port. Add the same port as an additional Pelican allocation.",
+      "env_variable": "CONSOLE_PORT",
+      "default_value": "7351",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "integer",
+        "between:1,65535"
+      ]
+    },
+    {
+      "sort": 10,
+      "name": "Console Username",
+      "description": "Nakama console username.",
+      "env_variable": "CONSOLE_USERNAME",
+      "default_value": "admin",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "max:64"
+      ]
+    },
+    {
+      "sort": 11,
+      "name": "Console Password",
+      "description": "Nakama console password.",
+      "env_variable": "CONSOLE_PASSWORD",
+      "default_value": "CHANGE_ME_CONSOLE_PASSWORD",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "string",
+        "min:12",
+        "max:128"
+      ]
+    },
+    {
+      "sort": 12,
+      "name": "Log Level",
+      "description": "Nakama log level.",
+      "env_variable": "LOG_LEVEL",
+      "default_value": "INFO",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": [
+        "required",
+        "in:DEBUG,INFO,WARN,ERROR"
+      ]
+    }
+  ]
+}
