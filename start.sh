@@ -9,6 +9,17 @@ PGLOG="${PGROOT}/postgres.log"
 POSTGRES_PORT="${POSTGRES_PORT:-15432}"
 POSTGRES_ALLOWED_CIDR="${POSTGRES_ALLOWED_CIDR:-172.16.0.0/12}"
 
+# Fail before starting PostgreSQL when Discord runtime configuration is missing.
+DISCORD_LINK_SERVICE_KEY="${DISCORD_LINK_SERVICE_KEY:-}"
+if [[ ${#DISCORD_LINK_SERVICE_KEY} -lt 32 ]]; then
+    echo "Set DISCORD_LINK_SERVICE_KEY in Pelican to the same private key as the API (at least 32 characters)."
+    exit 1
+fi
+if [[ ! -f /home/container/nakama/modules/redux_discord.js ]]; then
+    echo "Missing Nakama module: /home/container/nakama/modules/redux_discord.js"
+    exit 1
+fi
+
 mkdir -p "${PGDATA}" "${PGSOCKET}" /home/container/nakama/data /home/container/nakama/modules
 
 POSTGRES_BIN="$(dirname "$(find /usr/lib/postgresql -type f -name postgres -print -quit)")"
@@ -114,7 +125,7 @@ echo "Running Nakama migrations..."
 /usr/local/bin/nakama migrate up \
     --database.address "${DATABASE_ADDRESS}"
 
-echo "Starting Nakama..."
+echo "Starting Nakama with JavaScript entrypoint redux_discord.js..."
 /usr/local/bin/nakama \
     --name "${NAKAMA_NAME}" \
     --data_dir "/home/container/nakama/data" \
@@ -123,7 +134,9 @@ echo "Starting Nakama..."
     --socket.port "${SERVER_PORT}" \
     --socket.server_key "${SERVER_KEY}" \
     --runtime.path "/home/container/nakama/modules" \
+    --runtime.js_entrypoint "redux_discord.js" \
     --runtime.http_key "${RUNTIME_HTTP_KEY}" \
+    --runtime.env "DISCORD_LINK_SERVICE_KEY=${DISCORD_LINK_SERVICE_KEY}" \
     --session.encryption_key "${SESSION_ENCRYPTION_KEY}" \
     --session.refresh_encryption_key "${SESSION_REFRESH_ENCRYPTION_KEY}" \
     --console.address "0.0.0.0" \
